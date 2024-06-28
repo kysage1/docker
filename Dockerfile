@@ -1,20 +1,20 @@
+# Use the official Ubuntu image as a base
 FROM ubuntu:latest
-RUN apt update -y > /dev/null 2>&1 && apt upgrade -y > /dev/null 2>&1 && apt install locales -y \
-&& localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
-ENV LANG en_US.utf8
-ARG NGROK_TOKEN
-ENV NGROK_TOKEN=${NGROK_TOKEN}
-RUN apt install ssh wget unzip -y > /dev/null 2>&1
-RUN wget -O ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip > /dev/null 2>&1
-RUN unzip ngrok.zip
-RUN echo "./ngrok config add-authtoken ${NGROK_TOKEN} &&" >>/kai.sh
-RUN echo "./ngrok tcp 22 &>/dev/null &" >>/kai.sh
-RUN mkdir /run/sshd
-RUN echo '/usr/sbin/sshd -D' >>/kai.sh
-RUN echo 'PermitRootLogin yes' >>  /etc/ssh/sshd_config 
-RUN echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
-RUN echo root:kai|chpasswd
-RUN service ssh start
-RUN chmod 755 /kai.sh
-EXPOSE 80 8888 8080 443 5130 5131 5132 5133 5134 5135 3306
-CMD  /kai.sh
+
+# Update package lists and install necessary packages
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the entire current directory into the container at /app
+COPY . /app
+
+# Install pyxtermjs
+RUN pip3 install -r requirements.txt --break-system-packages
+
+# Run the pyxtermjs command when the container starts
+CMD ["python3", "main.py"]
